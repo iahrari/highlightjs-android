@@ -1,17 +1,20 @@
 package com.pddstudio.highlightjs;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import androidx.annotation.NonNull;
+
 import com.pddstudio.highlightjs.models.Language;
 import com.pddstudio.highlightjs.models.Theme;
+import com.pddstudio.highlightjs.utils.ExtensionUtil;
 import com.pddstudio.highlightjs.utils.FileUtils;
 import com.pddstudio.highlightjs.utils.SourceUtils;
 
@@ -76,6 +79,7 @@ public class HighlightJsView extends WebView implements FileUtils.Callback {
         initView(context);
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void initView(Context context) {
         //make sure the view is blank
         loadUrl("about:blank");
@@ -106,9 +110,7 @@ public class HighlightJsView extends WebView implements FileUtils.Callback {
             setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-	        settings.setDisplayZoomControls(false);
-        }
+        settings.setDisplayZoomControls(false);
 
         if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN_MR1) {
 	        settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
@@ -153,6 +155,16 @@ public class HighlightJsView extends WebView implements FileUtils.Callback {
         this.language = language;
         //notify the callback (if set)
         if(onLanguageChangedListener != null) onLanguageChangedListener.onLanguageChanged(language);
+    }
+
+    /**
+     * Set the desired language to highlight the given source by the extension of file which contained source.
+     * If It can't find extension type it'd set language to {@link Language#AUTO_DETECT}.
+     * Default: {@link Language#AUTO_DETECT}
+     * @param extension - Extension of file with contains code.
+     */
+    public void setLanguageByFileExtension(String extension){
+        setHighlightLanguage(ExtensionUtil.INSTANCE.getLanguageByExtension(extension.toLowerCase()));
     }
 
     /**
@@ -209,7 +221,7 @@ public class HighlightJsView extends WebView implements FileUtils.Callback {
      */
     public void setSource(File source) {
         //try to encode and set the source
-        String encSource = FileUtils.loadSourceFromFile(source);
+        String encSource = FileUtils.INSTANCE.loadSourceFromFile(source);
         if(encSource == null) {
             Log.e(getClass().getSimpleName(), "Unable to encode file: " + source.getAbsolutePath());
         } else setSource(encSource);
@@ -221,8 +233,9 @@ public class HighlightJsView extends WebView implements FileUtils.Callback {
      */
     public void setSource(URL url) {
         //try to encode and set the source
-        FileUtils.loadSourceFromUrl(this, url);
+        FileUtils.INSTANCE.loadSourceFromUrl(this, url);
     }
+
 
     /**
      * Refresh the View.
